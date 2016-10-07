@@ -1,0 +1,18 @@
+{
+  "name": "node-review",
+  "version": "1.0.0",
+  "manifest_version": 2,
+  "browser_action": {
+    "default_icon": "icon_good.png",
+    "default_title": "Generate Metadata"
+  },
+  "permissions": [
+    "activeTab",
+    "webNavigation",
+    "tabs"
+  ],
+  "background": {
+    "scripts": ["index.js"],
+    "persistent": true
+  }
+}
