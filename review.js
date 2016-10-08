@@ -30,8 +30,8 @@
     }).join('\n')
     const str = `
       <p>
-        <strong>${NOT_READY}</strong>
-        <br>The following reviewers have requested changed:
+        <strong>Error: ${NOT_READY}</strong>
+        <br>The following reviewers have requested changes:
         <br>
         <ul>
           ${rejString}
@@ -46,7 +46,7 @@
   if (!meta.approvals) {
     const str = `
       <p>
-        <strong>${NOT_READY}</strong>
+        <strong>Error: ${NOT_READY}</strong>
         <br>There are no approvals.
       </p>`
     showMessage(str, 'error')
@@ -55,15 +55,18 @@
 
   getCollaborators((err, collabs) => {
     if (err) {
-      showMessage(`<br>
-      <p>Unable to load collaborators</p>
-      <br>`, 'error')
+      const str = `
+      <p>
+        <strong>Error: Something went wrong</strong>
+        <br>Unable to load collaborators
+      </p>`
+      showMessage(str, 'error')
       console.error('Unable to load collaborators', err)
       return
     }
 
     const out = formatMeta(meta, collabs)
-    showMessage(`<h3>PR Metadata</h3><br>${out}`)
+    showMessage(`<strong>PR Metadata</strong><br>${out}`)
   })
 
   function getPR() {
@@ -111,15 +114,27 @@
     }
   }
 
+  function getIconForType(type = 'info') {
+    switch (type) {
+      case 'error':
+      case 'warn':
+        return '<svg aria-hidden="true" class="flash-icon octicon octicon-alert" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path d="M8.865 1.52c-.18-.31-.51-.5-.87-.5s-.69.19-.87.5L.275 13.5c-.18.31-.18.69 0 1 .19.31.52.5.87.5h13.7c.36 0 .69-.19.86-.5.17-.31.18-.69.01-1L8.865 1.52zM8.995 13h-2v-2h2v2zm0-3h-2V6h2v4z"></path></svg>'
+      default:
+        return ''
+    }
+  }
+
   function showMessage(str, type = 'info') {
     // Somewhat lifted from
     // https://github.com/OctoLinker/browser-extension/blob/master/lib/gh-interface.js
     const klass = getClassForType(type)
     const div = document.createElement('DIV')
-    div.classList = 'flash flash-full'
+    div.classList = 'flash flash-full flash-with-icon'
     if (klass) div.classList.add(klass)
+    const icon = getIconForType(type)
     div.innerHTML = `
     <div class="container">
+      ${icon}
       <button class="flash-close js-flash-close" type="button" aria_label="Dismiss this message">
         <svg aria-hidden="true" class="octicon octicon-x" height="16" version="1.1" viewBox="0 0 12 16" width="12"><path d="M7.48 8l3.75 3.75-1.48 1.48L6 9.48l-3.75 3.75-1.48-1.48L4.52 8 .77 4.25l1.48-1.48L6 6.52l3.75-3.75 1.48 1.48z"></path></svg>
       </button>
