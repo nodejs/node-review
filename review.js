@@ -8,13 +8,17 @@
 
   const PR_RE = /\/nodejs\/([^\/]+)\/pull\/([^\/]+)\/?$/
 
-  const prUrl = getPR()
+  const { prUrl, repo } = getPR()
   if (!prUrl) {
     return
   }
 
   const NOT_READY = 'This pull request is not yet ready to land.'
   const LGTM_RE = /(\W|^)lgtm(\W|$)/i
+  const FIXES_RE = /Fixes: (.*)/mg
+  const FIX_RE = /Fixes: (.*)/
+  const REFS_RE = /Refs?: (.*)/mg
+  const REF_RE = /Refs?: (.*)/
 
   const meta = getReviews()
 
@@ -53,6 +57,8 @@
     return
   }
 
+  const OP = document.querySelector('.discussion-timeline .comment-body')
+
   getCollaborators((err, collabs) => {
     if (err) {
       const str = `
@@ -72,8 +78,90 @@
   function getPR() {
     const path = window.location.pathname
     const match = path.match(PR_RE)
-    if (!match) return null
-    return `https://github.com${path}`
+    if (!match) return { prUrl: null, repo: null }
+    return {
+      prUrl: `https://github.com${path}`
+    , repo: `nodejs/${match[1]}`
+    }
+  }
+
+  function getFixesUrl() {
+    const op = document.querySelector('.discussion-timeline .comment-body')
+    const text = op.innerText
+
+    var fixes = text.match(FIXES_RE)
+    if (fixes) {
+      const tmp = fixes[1]
+      if (tmp[0] === '#') {
+        // This is a reference to an issue in the current repository.
+        // Generate the full url
+        return `https://github.com/${repo}/issues/${tmp.slice(1)}`
+      } else {
+        return `https://github.com/${tmp}`
+      }
+    }
+
+    return null
+  }
+
+  function getFixesUrlsFromArray(ar) {
+    return ar.reduce((set, item) => {
+      const m = item.match(FIX_RE)
+      if (!m) return set
+      const fix = m[1]
+      if (fix[0] === '#') {
+        set.push(`https://github.com/${repo}/issues/${fix.slice(1)}`)
+      } else {
+        set.push(`https://github.com/${fix}`)
+      }
+      return set
+    }, [])
+  }
+
+  function getRefsUrlsFromArray(ar) {
+    return ar.reduce((set, item) => {
+      const m = item.match(REF_RE)
+      if (!m) return set
+      const ref = m[1]
+      const url = getRefUrlFromOP(ref)
+      if (url) set.push(url)
+      return set
+    }, [])
+  }
+
+  // Do this so we can reliably get the correct url.
+  // Otherwise, the number could reference a PR or an issue.
+  function getRefUrlFromOP(ref) {
+    const as = OP.querySelectorAll('a.issue-link')
+    const links = Array.from(as)
+    for (const link of links) {
+      const text = link.innerText
+      if (text === ref) {
+        const href = link.getAttribute('href')
+        if (href) return href
+      }
+    }
+  }
+
+  function getRefsAndFixes() {
+    const text = OP.innerText
+
+    const out = {
+      fixes: []
+    , refs: []
+    }
+
+    var fixes = text.match(FIXES_RE)
+    if (fixes) {
+      out.fixes = getFixesUrlsFromArray(fixes)
+    }
+
+    var refs = text.match(REFS_RE)
+    if (refs) {
+      out.refs = getRefsUrlsFromArray(refs)
+    }
+
+    return out
   }
 
   function escapeHtml(str) {
@@ -96,10 +184,25 @@
       revs.push(escapeHtml(`Reviewed-By: ${c.name} <${c.email}>`))
     }
 
+    const { refs, fixes } = getRefsAndFixes()
+
+    const result = [`PR-URL: ${prUrl}<br>`]
+
+    if (fixes && fixes.length) {
+      fixes.forEach((fix) => {
+        result.push(`Fixes: ${fix}<br>`)
+      })
+    }
+
+    if (refs && refs.length) {
+      refs.forEach((ref) => {
+        result.push(`Ref: ${ref}<br>`)
+      })
+    }
+
     return `<br>
     <p>
-      PR-URL: ${prUrl}
-      <br><br>
+      ${result.join('\n')}
       ${revs.join('<br>')}
       <br>
     </p>
