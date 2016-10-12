@@ -19,8 +19,43 @@
   const FIX_RE = /Fixes: (.*)/
   const REFS_RE = /Refs?: (.*)/mg
   const REF_RE = /Refs?: (.*)/
+  const APPROVAL_RE = /(.*) approved these changes/
+  const REJECTED_RE = /(.*) requested changes/
 
-  const meta = getReviews()
+  class Metadata {
+    constructor() {
+      this.approvals = 0
+      this.rejections = 0
+      this.reviewers = new Map()
+    }
+
+    addApproval(login) {
+      if (!this.reviewers.has(login)) {
+        this.approvals += 1
+        this.reviewers.set(login, STATUS.APPROVED)
+        return
+      }
+      const status = this.reviewers.get(login)
+      if (status === STATUS.APPROVED) return
+      this.rejections -= 1
+      this.reviewers.set(login, STATUS.APPROVED)
+    }
+
+    addRejection(login) {
+      if (!this.reviewers.has(login)) {
+        this.rejections += 1
+        this.reviewers.set(login, STATUS.REJECTED)
+        return
+      }
+      const status = this.reviewers.get(login)
+      if (status === STATUS.REJECTED) return
+      this.approvals -= 1
+      this.reviewers.set(login, STATUS.REJECTED)
+    }
+  }
+
+  const m = new Metadata()
+  const meta = getReviews(m)
 
   if (meta.rejections) {
     const rejs = []
@@ -249,7 +284,39 @@
     container.scrollIntoViewIfNeeded()
   }
 
-  function getReviews() {
+  function getReviewsWithoutDetails(meta) {
+    const items = Array.from(document.querySelectorAll('.discussion-item'))
+
+    if (!items.length) return meta
+
+    for (const item of items) {
+      const text = item.innerText
+      const approval = text.match(APPROVAL_RE)
+      if (approval) {
+        const login = approval[1].toLowerCase()
+        meta.addApproval(login)
+        continue
+      }
+
+      const rejection = text.match(REJECTED_RE)
+      if (rejection) {
+        const login = rejection[1].toLowerCase()
+        meta.addRejection(login)
+        continue
+      }
+    }
+
+    const raw = getRawReviews()
+    if (raw.length) {
+      for (const login of raw) {
+        meta.addApproval(login)
+      }
+    }
+
+    return meta
+  }
+
+  function getReviews(meta) {
     const sel = '.merge-status-list .merge-status-item .merge-status-details'
     const ICONS = {
       APPROVED: 'text-green'
@@ -258,11 +325,8 @@
 
     const items = document.querySelectorAll(sel)
     const filtered = Array.from(items).filter(item => item.text !== 'Details')
-    const meta = {
-      approvals: 0
-    , rejections: 0
-    , reviewers: new Map()
-    }
+
+    if (!filtered.length) return getReviewsWithoutDetails(meta)
 
     for (const item of filtered) {
       const parent = item.parentNode
@@ -274,22 +338,18 @@
       const reviewerA = parent.querySelector('a:not(.merge-status-details)')
       const href = reviewerA.getAttribute('href')
       const reviewerUsername = href.slice(1)
+      const login = reviewerUsername.toLowerCase()
       if (status === STATUS.APPROVED) {
-        meta.approvals++
+        meta.addApproval(login)
       } else if (status === STATUS.REJECTED) {
-        meta.rejections++
+        meta.addRejection(login)
       }
-
-      meta.reviewers.set(reviewerUsername.toLowerCase(), status)
     }
 
     const raw = getRawReviews()
     if (raw.length) {
       for (const login of raw) {
-        if (!meta.reviewers.has(login)) {
-          meta.reviewers.set(login, STATUS.APPROVED)
-          meta.approvals++
-        }
+        meta.addApproval(login)
       }
     }
 
