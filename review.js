@@ -191,7 +191,7 @@
   function formatMeta(meta, collabs) {
     const revs = []
     for (const name of meta.reviewers.keys()) {
-      const c = collabs[name]
+      const c = collabs.get(name)
       if (!c) {
         console.error('skipping unknown reviewer', name)
         continue
@@ -364,30 +364,23 @@
   function getCollaborators(cb) {
     // This is more or less taken from
     // https://github.com/rvagg/iojs-tools/blob/master/pr-metadata/pr-metadata.js
-    const RE = '\\* \\[([^\\]]+)\\]\\([^\\)]+\\) -\\s\\*\\*([^\\*]+)\\*\\* ' +
-      '&lt;([^&]+)&gt;'
+    const RE = /\* \[(.+?)\]\(.+?\) -\s\*\*(.+?)\*\* &lt;(.+?)&gt;/mg;
     const url = 'https://raw.githubusercontent.com/nodejs/node/master/README.md'
     fetch(url)
       .then((res) => res.text())
       .then((body) => {
-        const collabs = body.match(new RegExp(RE, 'mg'))
-        if (!collabs) {
-          const err = new Error('Could not parse collaborators')
-          return cb(err)
-        }
+        const members = new Map
+        let m
 
-        const members = collabs.reduce((set, item) => {
-          const m = item.match(new RegExp(RE))
-          set[m[1].toLowerCase()] = {
+        while (m = RE.exec(body)) {
+          members.set(m[1].toLowerCase(), {
             login: m[1]
           , name: m[2]
           , email: m[3]
-          }
+          })
+        }
 
-          return set
-        }, {})
-
-        if (!Object.keys(members).length) {
+        if (!members.size) {
           throw new Error('Could not find any collaborators')
         }
 
