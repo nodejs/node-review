@@ -351,8 +351,8 @@
       const href = a.getAttribute('href')
       if (!href) continue
       const login = href.slice(1).toLowerCase()
-      const body = comment.querySelector('.comment-body')
-      if (body && LGTM_RE.test(body.innerHTML)) {
+      const paragraphs = comment.querySelectorAll('.comment-body > p')
+      if (Array.from(paragraphs).some(p => LGTM_RE.test(p.innerHTML))) {
         revs.push(login)
       }
     }
