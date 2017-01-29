@@ -122,35 +122,13 @@
     }
   }
 
-  function getFixesUrl() {
-    const op = document.querySelector('.discussion-timeline .comment-body')
-    const text = op.innerText
-
-    var fixes = text.match(FIXES_RE)
-    if (fixes) {
-      const tmp = fixes[1]
-      if (tmp[0] === '#') {
-        // This is a reference to an issue in the current repository.
-        // Generate the full url
-        return `https://github.com/${repo}/issues/${tmp.slice(1)}`
-      } else {
-        return `https://github.com/${tmp}`
-      }
-    }
-
-    return null
-  }
-
   function getFixesUrlsFromArray(ar) {
     return ar.reduce((set, item) => {
       const m = item.match(FIX_RE)
       if (!m) return set
       const fix = m[1]
-      if (fix[0] === '#') {
-        set.push(`https://github.com/${repo}/issues/${fix.slice(1)}`)
-      } else {
-        set.push(`https://github.com/${fix}`)
-      }
+      const url = fix.replace(/^#/, `${repo}#`).replace('#', '/issues/')
+      set.push(`https://github.com/${url}`)
       return set
     }, [])
   }
