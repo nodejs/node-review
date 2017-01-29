@@ -38,6 +38,7 @@
       const status = this.reviewers.get(login)
       if (status === STATUS.APPROVED) return
       this.rejections -= 1
+      this.approvals += 1
       this.reviewers.set(login, STATUS.APPROVED)
     }
 
@@ -50,6 +51,7 @@
       const status = this.reviewers.get(login)
       if (status === STATUS.REJECTED) return
       this.approvals -= 1
+      this.rejections += 1
       this.reviewers.set(login, STATUS.REJECTED)
     }
   }
