@@ -218,8 +218,7 @@
     return `<br>
     <p>
       ${result.join('\n')}
-      ${revs.join('<br>')}
-      <br>
+      ${revs.join('<br>')}<br>
     </p>
     `
   }
