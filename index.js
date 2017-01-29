@@ -1,11 +1,11 @@
 'use strict'
 
-const PR_RE = /\/nodejs\/([^\/]+)\/pull\/([^\/]+)\/?$/
+const PR_RE = /^\/nodejs\/([^\/]+)\/pull\/([^\/]+)\/?$/
 
 const b = chrome.extension.getBackgroundPage()
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.url === undefined) return
-  if (PR_RE.test(changeInfo.url)) {
+  if (PR_RE.test(new URL(changeInfo.url).pathname)) {
     chrome.browserAction.enable()
     chrome.browserAction.setIcon({
       path: 'icon_good.png'

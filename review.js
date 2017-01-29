@@ -6,7 +6,7 @@
   , REJECTED: 'REJECTED'
   }
 
-  const PR_RE = /\/nodejs\/([^\/]+)\/pull\/([^\/]+)\/?$/
+  const PR_RE = /^\/nodejs\/([^\/]+)\/pull\/([^\/]+)\/?$/
 
   const { prUrl, repo } = getPR()
   if (!prUrl) {
