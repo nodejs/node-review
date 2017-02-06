@@ -6,7 +6,7 @@
   , REJECTED: 'REJECTED'
   }
 
-  const PR_RE = /\/nodejs\/([^\/]+)\/pull\/([^\/]+)\/?$/
+  const PR_RE = /^\/nodejs\/([^\/]+)\/pull\/([^\/]+)\/?$/
 
   const { prUrl, repo } = getPR()
   if (!prUrl) {
@@ -38,6 +38,7 @@
       const status = this.reviewers.get(login)
       if (status === STATUS.APPROVED) return
       this.rejections -= 1
+      this.approvals += 1
       this.reviewers.set(login, STATUS.APPROVED)
     }
 
@@ -50,6 +51,7 @@
       const status = this.reviewers.get(login)
       if (status === STATUS.REJECTED) return
       this.approvals -= 1
+      this.rejections += 1
       this.reviewers.set(login, STATUS.REJECTED)
     }
   }
@@ -120,35 +122,13 @@
     }
   }
 
-  function getFixesUrl() {
-    const op = document.querySelector('.discussion-timeline .comment-body')
-    const text = op.innerText
-
-    var fixes = text.match(FIXES_RE)
-    if (fixes) {
-      const tmp = fixes[1]
-      if (tmp[0] === '#') {
-        // This is a reference to an issue in the current repository.
-        // Generate the full url
-        return `https://github.com/${repo}/issues/${tmp.slice(1)}`
-      } else {
-        return `https://github.com/${tmp}`
-      }
-    }
-
-    return null
-  }
-
   function getFixesUrlsFromArray(ar) {
     return ar.reduce((set, item) => {
       const m = item.match(FIX_RE)
       if (!m) return set
       const fix = m[1]
-      if (fix[0] === '#') {
-        set.push(`https://github.com/${repo}/issues/${fix.slice(1)}`)
-      } else {
-        set.push(`https://github.com/${fix}`)
-      }
+      const url = fix.replace(/^#/, `${repo}#`).replace('#', '/issues/')
+      set.push(`https://github.com/${url}`)
       return set
     }, [])
   }
@@ -211,7 +191,7 @@
   function formatMeta(meta, collabs) {
     const revs = []
     for (const name of meta.reviewers.keys()) {
-      const c = collabs[name]
+      const c = collabs.get(name)
       if (!c) {
         console.error('skipping unknown reviewer', name)
         continue
@@ -238,8 +218,7 @@
     return `<br>
     <p>
       ${result.join('\n')}
-      ${revs.join('<br>')}
-      <br>
+      ${revs.join('<br>')}<br>
     </p>
     `
   }
@@ -372,8 +351,8 @@
       const href = a.getAttribute('href')
       if (!href) continue
       const login = href.slice(1).toLowerCase()
-      const body = comment.querySelector('.comment-body')
-      if (body && LGTM_RE.test(body.innerHTML)) {
+      const paragraphs = comment.querySelectorAll('.comment-body > p')
+      if (Array.from(paragraphs).some(p => LGTM_RE.test(p.innerHTML))) {
         revs.push(login)
       }
     }
@@ -384,30 +363,23 @@
   function getCollaborators(cb) {
     // This is more or less taken from
     // https://github.com/rvagg/iojs-tools/blob/master/pr-metadata/pr-metadata.js
-    const RE = '\\* \\[([^\\]]+)\\]\\([^\\)]+\\) -\\s\\*\\*([^\\*]+)\\*\\* ' +
-      '&lt;([^&]+)&gt;'
+    const RE = /\* \[(.+?)\]\(.+?\) -\s\*\*(.+?)\*\* &lt;(.+?)&gt;/mg;
     const url = 'https://raw.githubusercontent.com/nodejs/node/master/README.md'
     fetch(url)
       .then((res) => res.text())
       .then((body) => {
-        const collabs = body.match(new RegExp(RE, 'mg'))
-        if (!collabs) {
-          const err = new Error('Could not parse collaborators')
-          return cb(err)
-        }
+        const members = new Map
+        let m
 
-        const members = collabs.reduce((set, item) => {
-          const m = item.match(new RegExp(RE))
-          set[m[1].toLowerCase()] = {
+        while (m = RE.exec(body)) {
+          members.set(m[1].toLowerCase(), {
             login: m[1]
           , name: m[2]
           , email: m[3]
-          }
+          })
+        }
 
-          return set
-        }, {})
-
-        if (!Object.keys(members).length) {
+        if (!members.size) {
           throw new Error('Could not find any collaborators')
         }
 
