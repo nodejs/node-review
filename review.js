@@ -211,7 +211,7 @@
 
     if (refs && refs.length) {
       refs.forEach((ref) => {
-        result.push(`Ref: ${ref}<br>`)
+        result.push(`Refs: ${ref}<br>`)
       })
     }
 
