@@ -1,18 +1,20 @@
 {
   "name": "node-review",
   "version": "1.0.0",
+  "author": "evanlucas",
   "manifest_version": 2,
-  "browser_action": {
-    "default_icon": "icon_good.png",
+  "page_action": {
+    "default_icon": "icon.png",
     "default_title": "Generate Metadata"
   },
   "permissions": [
-    "activeTab",
-    "webNavigation",
+    "*://*.github.com/*",
     "tabs"
   ],
   "background": {
-    "scripts": ["index.js"],
+    "scripts": [
+      "index.js"
+    ],
     "persistent": true
   }
 }
