@@ -21,6 +21,7 @@
   const REF_RE = /Refs?: (.*)/
   const APPROVAL_RE = /(.*) approved these changes/
   const REJECTED_RE = /(.*) requested changes/
+  const LOGIN_RE = / .*/
 
   class Metadata {
     constructor() {
@@ -30,6 +31,7 @@
     }
 
     addApproval(login) {
+      login = login.replace(LOGIN_RE, '')
       if (!this.reviewers.has(login)) {
         this.approvals += 1
         this.reviewers.set(login, STATUS.APPROVED)
@@ -43,6 +45,7 @@
     }
 
     addRejection(login) {
+      login = login.replace(LOGIN_RE, '')
       if (!this.reviewers.has(login)) {
         this.rejections += 1
         this.reviewers.set(login, STATUS.REJECTED)
