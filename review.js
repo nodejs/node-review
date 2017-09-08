@@ -21,6 +21,7 @@
   const REF_RE = /Refs?: (.*)/
   const APPROVAL_RE = /(.*) approved these changes/
   const REJECTED_RE = /(.*) requested changes/
+  const DISMISSED_RE = /(.*) dismissed/
   const LOGIN_RE = / .*/
 
   class Metadata {
@@ -57,6 +58,15 @@
       this.rejections += 1
       this.reviewers.set(login, STATUS.REJECTED)
     }
+
+    addDismissal(login) {
+      login = login.replace(LOGIN_RE, '')
+      const status = this.reviewers.get(login)
+      if (status === STATUS.REJECTED) this.rejections -= 1
+      else if (status === STATUS.APPROVED) this.approvals -= 1
+      this.reviewers.delete(login)
+    }
+
   }
 
   const m = new Metadata()
@@ -284,6 +294,15 @@
       if (rejection) {
         const login = rejection[1].toLowerCase()
         meta.addRejection(login)
+        continue
+      }
+
+      const dismissal = text.match(DISMISSED_RE)
+      if (dismissal) {
+        const authorA = item.querySelectorAll('a.author')[1];
+        if (!authorA) continue;
+        const login = authorA.innerText;
+        meta.addDismissal(login)
         continue
       }
     }
