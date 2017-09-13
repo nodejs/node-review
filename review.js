@@ -299,7 +299,8 @@
 
       const dismissal = text.match(DISMISSED_RE)
       if (dismissal) {
-        const authorA = item.querySelectorAll('a.author')[1];
+        const authors = item.querySelectorAll('a.author');
+        const authorA = authors.length === 2 ? authors[1] : authors[0];
         if (!authorA) continue;
         const login = authorA.innerText;
         meta.addDismissal(login)
