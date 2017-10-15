@@ -22,6 +22,7 @@
   const APPROVAL_RE = /(.*) approved these changes/
   const REJECTED_RE = /(.*) requested changes/
   const DISMISSED_RE = /(.*) dismissed/
+  const REFERENCE_RE = /referenced this pull request in/
   const LOGIN_RE = / .*/
 
   class Metadata {
@@ -283,6 +284,11 @@
 
     for (const item of items) {
       const text = item.innerText
+
+      if (text.match(REFERENCE_RE)) {
+        continue;
+      }
+
       const approval = text.match(APPROVAL_RE)
       if (approval) {
         const login = approval[1].toLowerCase()
