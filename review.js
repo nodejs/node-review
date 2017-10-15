@@ -308,7 +308,7 @@
         const authors = item.querySelectorAll('a.author');
         const authorA = authors.length === 2 ? authors[1] : authors[0];
         if (!authorA) continue;
-        const login = authorA.innerText;
+        const login = authorA.innerText.toLowerCase();
         meta.addDismissal(login)
         continue
       }
