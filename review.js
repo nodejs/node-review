@@ -1,12 +1,18 @@
+/* global browser */
+
 'use strict'
 
-;(function() {
+if (typeof browser !== 'undefined') {
+  var chrome = browser
+}
+
+;(function () {
   const STATUS = {
-    APPROVED: 'APPROVED'
-  , REJECTED: 'REJECTED'
+    APPROVED: 'APPROVED',
+    REJECTED: 'REJECTED'
   }
 
-  const PR_RE = /^\/nodejs\/([^\/]+)\/pull\/([^\/]+)\/?$/
+  const PR_RE = /^\/nodejs\/([^/]+)\/pull\/([^/]+)\/?$/
 
   const { prUrl, repo } = getPR()
   if (!prUrl) {
@@ -26,13 +32,13 @@
   const LOGIN_RE = / .*/
 
   class Metadata {
-    constructor() {
+    constructor () {
       this.approvals = 0
       this.rejections = 0
       this.reviewers = new Map()
     }
 
-    addApproval(login) {
+    addApproval (login) {
       login = login.replace(LOGIN_RE, '')
       if (!this.reviewers.has(login)) {
         this.approvals += 1
@@ -46,7 +52,7 @@
       this.reviewers.set(login, STATUS.APPROVED)
     }
 
-    addRejection(login) {
+    addRejection (login) {
       login = login.replace(LOGIN_RE, '')
       if (!this.reviewers.has(login)) {
         this.rejections += 1
@@ -113,30 +119,47 @@
   getCollaborators((err, collabs) => {
     if (err) {
       const str = `
-      <p>
-        <strong>Error: Something went wrong</strong>
-        <br>Unable to load collaborators
-      </p>`
+        <p>
+          <strong>Error: Something went wrong</strong>
+          <br>Unable to load collaborators
+        </p>`
       showMessage(str, 'error')
       console.error('Unable to load collaborators', err)
       return
     }
 
     const out = formatMeta(meta, collabs)
-    showMessage(`<strong>PR Metadata</strong><br>${out}`)
+    showMessage(`
+      <h3>PR Metadata</h3>
+      <div style="margin-top:0.5em">
+        <div>
+          <div style="float:right">
+            <div class="BtnGroup">
+              <button aria-label="Copy the PR metadata" class="js-zeroclipboard btn btn-outline BtnGroup-item zeroclipboard-button tooltipped tooltipped-s" data-clipboard-text="${out}" data-copied-hint="Copied!" type="button">
+                <svg aria-hidden="true" class="octicon octicon-clippy" height="16" version="1.1" viewBox="0 0 14 16" width="14">
+                  <path fill-rule="evenodd" d="M2 13h4v1H2v-1zm5-6H2v1h5V7zm2 3V8l-3 3 3 3v-2h5v-2H9zM4.5 9H2v1h2.5V9zM2 12h2.5v-1H2v1zm9 1h1v2c-.02.28-.11.52-.3.7-.19.18-.42.28-.7.3H1c-.55 0-1-.45-1-1V4c0-.55.45-1 1-1h3c0-1.11.89-2 2-2 1.11 0 2 .89 2 2h3c.55 0 1 .45 1 1v5h-1V6H1v9h10v-2zM2 5h8c0-.55-.45-1-1-1H8c-.55 0-1-.45-1-1s-.45-1-1-1-1 .45-1 1-.45 1-1 1H3c-.55 0-1 .45-1 1z"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div>
+            <pre>${out}</pre>
+          </div>
+        </div>
+      </div>`)
   })
 
-  function getPR() {
+  function getPR () {
     const path = window.location.pathname
     const match = path.match(PR_RE)
     if (!match) return { prUrl: null, repo: null }
     return {
-      prUrl: `https://github.com${path}`
-    , repo: `nodejs/${match[1]}`
+      prUrl: `https://github.com${path}`,
+      repo: `nodejs/${match[1]}`
     }
   }
 
-  function getFixesUrlsFromArray(ar) {
+  function getFixesUrlsFromArray (ar) {
     return ar.reduce((set, item) => {
       const m = item.match(FIX_RE)
       if (!m) return set
@@ -147,7 +170,7 @@
     }, [])
   }
 
-  function getRefsUrlsFromArray(ar) {
+  function getRefsUrlsFromArray (ar) {
     return ar.reduce((set, item) => {
       const m = item.match(REF_RE)
       if (!m) return set
@@ -160,7 +183,7 @@
 
   // Do this so we can reliably get the correct url.
   // Otherwise, the number could reference a PR or an issue.
-  function getRefUrlFromOP(ref) {
+  function getRefUrlFromOP (ref) {
     const as = OP.querySelectorAll('a.issue-link')
     const links = Array.from(as)
     for (const link of links) {
@@ -172,12 +195,12 @@
     }
   }
 
-  function getRefsAndFixes() {
+  function getRefsAndFixes () {
     const text = OP.innerText
 
     const out = {
-      fixes: []
-    , refs: []
+      fixes: [],
+      refs: []
     }
 
     var fixes = text.match(FIXES_RE)
@@ -193,7 +216,7 @@
     return out
   }
 
-  function escapeHtml(str) {
+  function escapeHtml (str) {
     return str
       .replace(/&/g, '&amp;')
       .replace(/"/g, '&quot;')
@@ -202,7 +225,7 @@
       .replace(/>/g, '&gt;')
   }
 
-  function formatMeta(meta, collabs) {
+  function formatMeta (meta, collabs) {
     const revs = []
     for (const name of meta.reviewers.keys()) {
       const c = collabs.get(name)
@@ -215,29 +238,24 @@
 
     const { refs, fixes } = getRefsAndFixes()
 
-    const result = [`PR-URL: ${prUrl}<br>`]
+    const result = [`PR-URL: ${prUrl}`]
 
     if (fixes && fixes.length) {
       fixes.forEach((fix) => {
-        result.push(`Fixes: ${fix}<br>`)
+        result.push(`Fixes: ${fix}`)
       })
     }
 
     if (refs && refs.length) {
       refs.forEach((ref) => {
-        result.push(`Refs: ${ref}<br>`)
+        result.push(`Refs: ${ref}`)
       })
     }
 
-    return `<br>
-    <p>
-      ${result.join('\n')}
-      ${revs.join('<br>')}<br>
-    </p>
-    `
+    return result.join('\n') + '\n' + revs.join('\n')
   }
 
-  function getClassForType(type = 'info') {
+  function getClassForType (type = 'info') {
     switch (type) {
       case 'error': return 'flash-error'
       case 'warn': return 'flash-warn'
@@ -245,7 +263,7 @@
     }
   }
 
-  function getIconForType(type = 'info') {
+  function getIconForType (type = 'info') {
     switch (type) {
       case 'error':
       case 'warn':
@@ -255,12 +273,14 @@
     }
   }
 
-  function showMessage(str, type = 'info') {
+  function showMessage (str, type = 'info') {
     // Somewhat lifted from
     // https://github.com/OctoLinker/browser-extension/blob/master/lib/gh-interface.js
     const klass = getClassForType(type)
     const div = document.createElement('DIV')
-    div.classList = 'flash flash-full flash-with-icon'
+    div.classList.add('flash')
+    div.classList.add('flash-full')
+    div.classList.add('flash-with-icon')
     if (klass) div.classList.add(klass)
     const icon = getIconForType(type)
     div.innerHTML = `
@@ -274,10 +294,10 @@
 
     const container = document.querySelector('#js-flash-container')
     container.appendChild(div)
-    container.scrollIntoViewIfNeeded()
+    container.scrollIntoView(false)
   }
 
-  function getReviewsWithoutDetails(meta) {
+  function getReviewsWithoutDetails (meta) {
     const items = Array.from(document.querySelectorAll('.discussion-item'))
 
     if (!items.length) return meta
@@ -324,11 +344,11 @@
     return meta
   }
 
-  function getReviews(meta) {
+  function getReviews (meta) {
     const sel = '.merge-status-list .merge-status-item .merge-status-details'
     const ICONS = {
-      APPROVED: 'text-green'
-    , REJECTED: 'text-red'
+      APPROVED: 'text-green',
+      REJECTED: 'text-red'
     }
 
     const items = document.querySelectorAll(sel)
@@ -364,7 +384,7 @@
     return meta
   }
 
-  function getRawReviews() {
+  function getRawReviews () {
     const items = document.querySelectorAll('.timeline-comment-wrapper')
     const filtered = Array.from(items).filter((item) => {
       return !item.classList.contains('discussion-item-review')
@@ -389,34 +409,37 @@
     return revs
   }
 
-  function getCollaborators(cb) {
+  function getCollaborators (cb) {
     // This is more or less taken from
     // https://github.com/rvagg/iojs-tools/blob/master/pr-metadata/pr-metadata.js
-    const RE = /\* \[(.+?)\]\(.+?\) -\s\*\*(.+?)\*\* &lt;(.+?)&gt;/mg;
+    const RE = /\* \[(.+?)\]\(.+?\) -\s\*\*(.+?)\*\* &lt;(.+?)&gt;/mg
     const url = 'https://raw.githubusercontent.com/nodejs/node/master/README.md'
-    fetch(url)
-      .then((res) => res.text())
-      .then((body) => {
-        const members = new Map
-        let m
 
-        while (m = RE.exec(body)) {
-          members.set(m[1].toLowerCase(), {
-            login: m[1]
-          , name: m[2]
-          , email: m[3]
-          })
+    chrome.runtime.sendMessage(
+      {url: url},
+      function (response) {
+        if (response && response.error) {
+          cb(response.error)
+        } else if (response && response.body) {
+          const members = new Map()
+          let m
+
+          while (m = RE.exec(response.body)) { // eslint-disable-line no-cond-assign
+            members.set(m[1].toLowerCase(), {
+              login: m[1],
+              name: m[2],
+              email: m[3]
+            })
+          }
+
+          if (!members.size) {
+            throw new Error('Could not find any collaborators')
+          }
+
+          cb(null, members)
+        } else {
+          cb('No response received')
         }
-
-        if (!members.size) {
-          throw new Error('Could not find any collaborators')
-        }
-
-        return members
       })
-      .then((members) => {
-        cb(null, members)
-      })
-      .catch(cb)
   }
-})();
+})()
