@@ -184,7 +184,7 @@ if (typeof browser !== 'undefined') {
   // Do this so we can reliably get the correct url.
   // Otherwise, the number could reference a PR or an issue.
   function getRefUrlFromOP (ref) {
-    const as = OP.querySelectorAll('a.issue-link')
+    const as = OP.querySelectorAll('a')
     const links = Array.from(as)
     for (const link of links) {
       const text = link.innerText
