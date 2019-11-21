@@ -114,7 +114,7 @@ if (typeof browser !== 'undefined') {
     return
   }
 
-  const OP = document.querySelector('.discussion-timeline .comment-body')
+  const OP = document.querySelector('.pull-discussion-timeline .comment-body')
 
   getCollaborators((err, collabs) => {
     if (err) {
@@ -345,7 +345,7 @@ if (typeof browser !== 'undefined') {
   }
 
   function getReviews (meta) {
-    const sel = '.merge-status-list .merge-status-item .merge-status-details'
+    const sel = '.merge-status-list .review-item .review-status-item'
     const ICONS = {
       APPROVED: 'text-green',
       REJECTED: 'text-red'
@@ -357,13 +357,13 @@ if (typeof browser !== 'undefined') {
     if (!filtered.length) return getReviewsWithoutDetails(meta)
 
     for (const item of filtered) {
-      const parent = item.parentNode
+      const parent = item.closest('details')
       const icon = parent.querySelector('.merge-status-icon')
       const svg = icon.querySelector('svg')
       const status = svg.classList.contains(ICONS.APPROVED)
         ? STATUS.APPROVED
         : STATUS.REJECTED
-      const reviewerA = parent.querySelector('a:not(.merge-status-details)')
+      const reviewerA = item.querySelector('a:not(.merge-status-details)')
       const href = reviewerA.getAttribute('href')
       const reviewerUsername = href.slice(1)
       const login = reviewerUsername.toLowerCase()
