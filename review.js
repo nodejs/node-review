@@ -347,8 +347,8 @@ if (typeof browser !== 'undefined') {
   function getReviews (meta) {
     const sel = '.merge-status-list .review-item .review-status-item'
     const ICONS = {
-      APPROVED: 'text-green',
-      REJECTED: 'text-red'
+      APPROVED: 'octicon-check',
+      REJECTED: 'octicon-file-diff'
     }
 
     const items = document.querySelectorAll(sel)

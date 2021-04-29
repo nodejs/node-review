@@ -5,7 +5,7 @@ Generate review metadata for a Node.js repository.
 ## Install
 
 ```bash
-$ git clone git://github.com/evanlucas/node-review
+$ git clone git://github.com/nodejs/node-review
 $ cd node-review
 ```
 
